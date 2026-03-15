@@ -1,6 +1,7 @@
 mod app;
 mod context;
 mod document;
+mod format;
 mod tabs;
 
 use std::{env, path::Path};

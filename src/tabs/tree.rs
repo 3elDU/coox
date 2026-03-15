@@ -9,6 +9,8 @@ use ratatui::{
     widgets::{List, ListState, StatefulWidget, Widget},
 };
 
+use crate::format::tree::FormattedNode;
+
 /// Shows the HTML tree as a scrollable list
 pub struct TreeTab {
     tree: Handle,
@@ -47,28 +49,14 @@ impl TreeTab {
     }
 
     fn build_list(&self, lines: &mut Vec<String>, node: Handle, depth: usize) -> usize {
-        let title = match &node.data {
-            NodeData::Doctype { name, .. } => format!("doctype {}", name),
-            NodeData::Document => "<!doctype html>".to_owned(),
-            NodeData::Comment { contents } => format!("<!-- {} -->", contents),
-            NodeData::Element { name, attrs, .. } => {
-                let attrs: Vec<String> = attrs
-                    .borrow()
-                    .iter()
-                    .map(|attr| format!("[{}]=\"{}\"", attr.name.local, attr.value))
-                    .collect();
+        let formatted: Result<FormattedNode, _> = node.clone().try_into();
 
-                if attrs.is_empty() {
-                    name.local.to_string()
-                } else {
-                    format!("{} {}", name.local, attrs.join(" "))
-                }
-            }
-            NodeData::Text { contents } => {
-                format!("text: {}", contents.borrow().trim().replace("\n", ""))
-            }
-            NodeData::ProcessingInstruction { .. } => "processing instruction".to_owned(),
-        };
+        // If try_into gives an err, it means the node doesn't need to be shown
+        if let Err(_) = formatted {
+            return 0;
+        }
+
+        let formatted = formatted.unwrap();
 
         let children: Vec<Handle> = node
             .children
@@ -87,15 +75,22 @@ impl TreeTab {
             .map(|node| node.clone())
             .collect();
 
-        lines.push(format!(
-            "{}{} ({})",
-            " ".repeat(depth as usize),
-            title,
-            children.len()
-        ));
+        let indent = " ".repeat(depth * 4);
+
+        if let Some(text) = formatted.opening_string {
+            lines.push(indent.clone() + &text);
+        }
+
+        if let Some(text) = formatted.text_content {
+            lines.push(indent.clone() + &text);
+        }
 
         for child_node in children.iter() {
             self.build_list(lines, child_node.clone(), depth + 1);
+        }
+
+        if let Some(text) = formatted.closing_string {
+            lines.push(indent.clone() + &text);
         }
 
         return children.len();
