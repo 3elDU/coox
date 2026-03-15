@@ -1,0 +1,11 @@
+[package]
+name = "coox"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+boa_engine = "0.21.0"
+boa_gc = "0.21.0"
+boa_runtime = { version = "0.21.0", features = ["all", "reqwest-blocking", "url"] }
+html5ever = "0.38.0"
+markup5ever_rcdom = "0.38.0"
