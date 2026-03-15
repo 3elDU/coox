@@ -41,9 +41,9 @@ impl Document {
 
     fn create_element(
         _: &JsValue,
-        args: &[JsValue],
-        context: &mut Context,
-        doc: Handle,
+        _args: &[JsValue],
+        _context: &mut Context,
+        _doc: Handle,
     ) -> Result<JsValue, JsError> {
         Ok(JsString::from("test").into())
     }
