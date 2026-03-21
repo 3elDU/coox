@@ -1,4 +1,8 @@
-use ratatui::{buffer::Buffer, layout::Rect, text::Text, widgets::Widget};
+use ratatui::{
+    buffer::Buffer,
+    layout::Rect,
+    widgets::{Paragraph, Widget, Wrap},
+};
 
 use crate::dom::node::{Handle, NodeData};
 
@@ -11,7 +15,9 @@ impl Widget for &PageTab {
         let mut rendered_tree = String::new();
         walk_tree(&mut rendered_tree, self.tree.clone());
 
-        Text::from(rendered_tree).render(area, buf);
+        Paragraph::new(rendered_tree)
+            .wrap(Wrap { trim: true })
+            .render(area, buf);
     }
 }
 
