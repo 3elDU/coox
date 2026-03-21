@@ -11,7 +11,7 @@
       "cargo": {
         "args": ["run", "--bin=coox"]
       },
-      "args": []
+      "args": ["https://google.com"]
     }
   ]
 }

@@ -12,6 +12,7 @@ impl TryFrom<RcDomHandle> for Node {
         let node_data = match &value.data {
             RcDomNodeData::Document => Ok(NodeData::Document),
             RcDomNodeData::Comment { contents } => Ok(NodeData::Comment(contents.into())),
+            RcDomNodeData::Text { contents } => Ok(NodeData::Text(contents.borrow().to_string())),
             RcDomNodeData::Element { name, attrs, .. } => Ok(NodeData::Element {
                 name: name.local.to_string(),
                 attrs: attrs

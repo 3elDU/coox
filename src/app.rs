@@ -11,7 +11,7 @@ use ratatui::{
 
 use crate::{
     context::BrowserContext,
-    tabs::{ActiveTab, tree::TreeTab},
+    tabs::{ActiveTab, page::PageTab, tree::TreeTab},
 };
 
 pub struct App {
@@ -20,6 +20,7 @@ pub struct App {
     exit: bool,
 
     active_tab: ActiveTab,
+    page_tab: PageTab,
     tree_tab: TreeTab,
 }
 
@@ -36,21 +37,21 @@ impl Widget for &mut App {
 
         // Body
         match self.active_tab {
+            ActiveTab::Page => self.page_tab.render(layout[1], buf),
             ActiveTab::Tree => self.tree_tab.render(layout[1], buf),
             _ => {}
-        }
+        };
     }
 }
 
 impl App {
     pub fn new(context: BrowserContext) -> Self {
-        let tree = context.dom.clone();
-
         Self {
+            page_tab: PageTab::new(context.dom.clone()),
+            tree_tab: TreeTab::new(context.dom.clone()),
             context,
             exit: false,
-            active_tab: ActiveTab::Page,
-            tree_tab: TreeTab::new(tree),
+            active_tab: ActiveTab::Tree,
         }
     }
 
