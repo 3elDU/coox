@@ -36,14 +36,12 @@ impl BrowserContext {
     pub fn load_document_from_file(&mut self, path: &Path) -> io::Result<()> {
         let text = fs::read_to_string(path)?;
 
-        self.dom = TryInto::<Node>::try_into(
+        self.dom = Node::from_rcdom(
             parse_document(RcDom::default(), Default::default())
                 .from_utf8()
                 .read_from(&mut text.as_bytes())?
                 .document,
-        )
-        .unwrap()
-        .into();
+        );
 
         Ok(())
     }
@@ -51,14 +49,12 @@ impl BrowserContext {
     pub fn load_document_from_network(&mut self, url: String) -> Result<(), Box<dyn Error>> {
         let text = reqwest::blocking::get(url)?.text()?;
 
-        self.dom = TryInto::<Node>::try_into(
+        self.dom = Node::from_rcdom(
             parse_document(RcDom::default(), Default::default())
                 .from_utf8()
                 .read_from(&mut text.as_bytes())?
                 .document,
-        )
-        .unwrap()
-        .into();
+        );
 
         Ok(())
     }

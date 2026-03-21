@@ -35,6 +35,7 @@ impl TryFrom<Handle> for FormattedNode {
                 (Some(opening), None, Some(format!("</{}>", name)))
             }
             NodeData::Text(contents) => (None, Some(contents.replace("\n", "")), None),
+            _ => return Err(()),
         };
 
         Ok(Self {
