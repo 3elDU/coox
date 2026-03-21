@@ -1,7 +1,6 @@
 use std::usize;
 
 use crossterm::event::{Event, KeyCode};
-use markup5ever_rcdom::{Handle, NodeData};
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
@@ -9,7 +8,10 @@ use ratatui::{
     widgets::{List, ListState, StatefulWidget, Widget},
 };
 
-use crate::format::tree::FormattedNode;
+use crate::{
+    dom::node::{Handle, NodeData},
+    format::tree::FormattedNode,
+};
 
 /// Shows the HTML tree as a scrollable list
 pub struct TreeTab {
@@ -59,13 +61,13 @@ impl TreeTab {
         let formatted = formatted.unwrap();
 
         let children: Vec<Handle> = node
-            .children
             .borrow()
+            .children
             .iter()
             .filter(|child| {
                 // Filter out empty text nodes
-                if let NodeData::Text { contents } = &child.data
-                    && contents.borrow().trim().is_empty()
+                if let NodeData::Text(contents) = &child.borrow().data
+                    && contents.trim().is_empty()
                 {
                     return false;
                 }

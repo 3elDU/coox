@@ -44,7 +44,7 @@ impl Widget for &mut App {
 
 impl App {
     pub fn new(context: BrowserContext) -> Self {
-        let tree = context.dom.document.clone();
+        let tree = context.dom.clone();
 
         Self {
             context,

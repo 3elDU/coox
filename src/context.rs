@@ -4,11 +4,11 @@ use boa_engine::Context as BoaContext;
 use html5ever::{parse_document, tendril::TendrilSink};
 use markup5ever_rcdom::RcDom;
 
-use crate::document::Document;
+use crate::dom::node::{Handle, Node};
 
 pub struct BrowserContext {
     pub js: BoaContext,
-    pub dom: RcDom,
+    pub dom: Handle,
 }
 
 impl BrowserContext {
@@ -27,19 +27,23 @@ impl BrowserContext {
         )
         .ok()?;
 
-        let dom = RcDom::default();
-
-        Document::init(&mut ctx, dom.document.clone()).ok()?;
-
-        Some(Self { js: ctx, dom })
+        Some(Self {
+            js: ctx,
+            dom: Handle::default(),
+        })
     }
 
     pub fn load_document_from_file(&mut self, path: &Path) -> io::Result<()> {
         let text = fs::read_to_string(path)?;
 
-        self.dom = parse_document(RcDom::default(), Default::default())
-            .from_utf8()
-            .read_from(&mut text.as_bytes())?;
+        self.dom = TryInto::<Node>::try_into(
+            parse_document(RcDom::default(), Default::default())
+                .from_utf8()
+                .read_from(&mut text.as_bytes())?
+                .document,
+        )
+        .unwrap()
+        .into();
 
         Ok(())
     }
@@ -47,9 +51,14 @@ impl BrowserContext {
     pub fn load_document_from_network(&mut self, url: String) -> Result<(), Box<dyn Error>> {
         let text = reqwest::blocking::get(url)?.text()?;
 
-        self.dom = parse_document(RcDom::default(), Default::default())
-            .from_utf8()
-            .read_from(&mut text.as_bytes())?;
+        self.dom = TryInto::<Node>::try_into(
+            parse_document(RcDom::default(), Default::default())
+                .from_utf8()
+                .read_from(&mut text.as_bytes())?
+                .document,
+        )
+        .unwrap()
+        .into();
 
         Ok(())
     }

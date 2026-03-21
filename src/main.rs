@@ -1,6 +1,6 @@
 mod app;
 mod context;
-mod document;
+mod dom;
 mod format;
 mod tabs;
 
