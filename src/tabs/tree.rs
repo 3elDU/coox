@@ -1,22 +1,22 @@
 use std::usize;
 
-use crossterm::event::{Event, KeyCode};
+use crossterm::event::Event;
 use ratatui::{
     buffer::Buffer,
     layout::Rect,
-    style::Style,
-    widgets::{List, ListState, StatefulWidget, Widget},
+    widgets::{StatefulWidget, Widget},
 };
 
 use crate::{
     dom::node::{Handle, NodeData},
     format::tree::FormattedNode,
+    widgets::{Scrollable, ScrollableState},
 };
 
 /// Shows the HTML tree as a scrollable list
 pub struct TreeTab {
     tree: Handle,
-    state: ListState,
+    state: ScrollableState,
 }
 
 impl Widget for &mut TreeTab {
@@ -24,8 +24,7 @@ impl Widget for &mut TreeTab {
         let mut lines = Vec::new();
         self.build_list(&mut lines, self.tree.clone(), 0);
 
-        let list: List<'_> = List::new(lines).highlight_style(Style::new().black().on_white());
-        StatefulWidget::render(list, area, buf, &mut self.state);
+        Scrollable::new(lines).render(area, buf, &mut self.state);
     }
 }
 
@@ -33,21 +32,12 @@ impl TreeTab {
     pub fn new(tree: Handle) -> Self {
         Self {
             tree,
-            state: ListState::default().with_selected(Some(0)),
+            state: Default::default(),
         }
     }
 
     pub fn handle_event(&mut self, event: Event) {
-        match event {
-            Event::Key(key_event) if key_event.is_press() => match key_event.code {
-                KeyCode::Down => self.state.select_next(),
-                KeyCode::Up => self.state.select_previous(),
-                KeyCode::PageDown => self.state.scroll_down_by(10),
-                KeyCode::PageUp => self.state.scroll_up_by(10),
-                _ => {}
-            },
-            _ => {}
-        }
+        self.state.handle_event(event);
     }
 
     fn build_list(&self, lines: &mut Vec<String>, node: Handle, depth: usize) -> usize {

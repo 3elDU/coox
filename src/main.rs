@@ -3,6 +3,7 @@ mod context;
 mod dom;
 mod format;
 mod tabs;
+mod widgets;
 
 use std::{env, path::Path};
 

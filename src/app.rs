@@ -80,6 +80,7 @@ impl App {
 
         // let the active tab handle events
         match self.active_tab {
+            ActiveTab::Page => self.page_tab.handle_event(event),
             ActiveTab::Tree => self.tree_tab.handle_event(event),
             _ => {}
         }
