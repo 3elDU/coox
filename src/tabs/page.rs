@@ -6,12 +6,12 @@ use ratatui::{
 };
 
 use crate::{
-    dom::node::{Handle, NodeData},
+    dom::node::{Node, NodeData},
     widgets::{Scrollable, ScrollableState},
 };
 
 pub struct PageTab {
-    tree: Handle,
+    tree: Node,
     state: ScrollableState,
 }
 
@@ -25,7 +25,7 @@ impl Widget for &mut PageTab {
 }
 
 impl PageTab {
-    pub fn new(tree: Handle) -> Self {
+    pub fn new(tree: Node) -> Self {
         Self {
             tree,
             state: Default::default(),
@@ -37,8 +37,8 @@ impl PageTab {
     }
 }
 
-fn walk_tree(output: &mut Vec<String>, handle: Handle) {
-    if let NodeData::Text(ref contents) = handle.borrow().data {
+fn walk_tree(output: &mut Vec<String>, node: Node) {
+    if let NodeData::Text(contents) = node.get_node_data().as_ref() {
         // Collapse whitespace: if the current line is empty, and the last line
         // in the list is empty too, do not add the current line
         if contents.trim().is_empty() {
@@ -52,7 +52,7 @@ fn walk_tree(output: &mut Vec<String>, handle: Handle) {
         }
     }
 
-    for child in &handle.borrow().children {
-        walk_tree(output, child.clone());
+    for child in node.get_children() {
+        walk_tree(output, child);
     }
 }

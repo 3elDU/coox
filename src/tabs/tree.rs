@@ -8,14 +8,14 @@ use ratatui::{
 };
 
 use crate::{
-    dom::node::{Handle, NodeData},
+    dom::node::{Node, NodeData},
     format::tree::FormattedNode,
     widgets::{Scrollable, ScrollableState},
 };
 
 /// Shows the HTML tree as a scrollable list
 pub struct TreeTab {
-    tree: Handle,
+    tree: Node,
     state: ScrollableState,
 }
 
@@ -29,7 +29,7 @@ impl Widget for &mut TreeTab {
 }
 
 impl TreeTab {
-    pub fn new(tree: Handle) -> Self {
+    pub fn new(tree: Node) -> Self {
         Self {
             tree,
             state: Default::default(),
@@ -40,7 +40,7 @@ impl TreeTab {
         self.state.handle_event(event);
     }
 
-    fn build_list(&self, lines: &mut Vec<String>, node: Handle, depth: usize) -> usize {
+    fn build_list(&self, lines: &mut Vec<String>, node: Node, depth: usize) -> usize {
         let formatted: Result<FormattedNode, _> = node.clone().try_into();
 
         // If try_into gives an err, it means the node doesn't need to be shown
@@ -50,13 +50,12 @@ impl TreeTab {
 
         let formatted = formatted.unwrap();
 
-        let children: Vec<Handle> = node
-            .borrow()
-            .children
+        let children: Vec<Node> = node
+            .get_children()
             .iter()
             .filter(|child| {
                 // Filter out empty text nodes
-                if let NodeData::Text(contents) = &child.borrow().data
+                if let NodeData::Text(contents) = child.get_node_data().as_ref()
                     && contents.trim().is_empty()
                 {
                     return false;

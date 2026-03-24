@@ -4,11 +4,11 @@ use boa_engine::Context as BoaContext;
 use html5ever::{parse_document, tendril::TendrilSink};
 use markup5ever_rcdom::RcDom;
 
-use crate::dom::node::{Handle, Node};
+use crate::dom::node::Node;
 
 pub struct BrowserContext {
     pub js: BoaContext,
-    pub dom: Handle,
+    pub dom: Node,
 }
 
 impl BrowserContext {
@@ -29,19 +29,18 @@ impl BrowserContext {
 
         Some(Self {
             js: ctx,
-            dom: Handle::default(),
+            dom: Node::default(),
         })
     }
 
     pub fn load_document_from_file(&mut self, path: &Path) -> io::Result<()> {
         let text = fs::read_to_string(path)?;
 
-        self.dom = Node::from_rcdom(
-            parse_document(RcDom::default(), Default::default())
-                .from_utf8()
-                .read_from(&mut text.as_bytes())?
-                .document,
-        );
+        self.dom = parse_document(RcDom::default(), Default::default())
+            .from_utf8()
+            .read_from(&mut text.as_bytes())?
+            .document
+            .into();
 
         Ok(())
     }
@@ -49,12 +48,11 @@ impl BrowserContext {
     pub fn load_document_from_network(&mut self, url: String) -> Result<(), Box<dyn Error>> {
         let text = reqwest::blocking::get(url)?.text()?;
 
-        self.dom = Node::from_rcdom(
-            parse_document(RcDom::default(), Default::default())
-                .from_utf8()
-                .read_from(&mut text.as_bytes())?
-                .document,
-        );
+        self.dom = parse_document(RcDom::default(), Default::default())
+            .from_utf8()
+            .read_from(&mut text.as_bytes())?
+            .document
+            .into();
 
         Ok(())
     }

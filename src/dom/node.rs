@@ -27,43 +27,35 @@ pub enum NodeData {
     },
 }
 
+/// The owned node with its actual contents, those are kept private and aren't
+/// exposed directly. Instead the [`Node`] provides methods to get references
+/// to them.
 #[derive(Default, Debug)]
-pub struct Node {
-    pub data: NodeData,
-    pub parent: Option<Weak<RefCell<Node>>>,
-    pub children: Vec<Handle>,
+pub struct InnerNode {
+    data: Rc<NodeData>,
+    parent: Option<Weak<RefCell<InnerNode>>>,
+    children: Vec<Node>,
 }
 
-pub type Handle = Rc<RefCell<Node>>;
-
-impl From<Node> for Handle {
-    fn from(value: Node) -> Self {
-        Rc::new(RefCell::new(value))
-    }
-}
-
-impl Node {
-    pub fn new(data: NodeData) -> Handle {
+impl InnerNode {
+    fn new(data: NodeData) -> Self {
         Self {
-            data,
+            data: Rc::new(data),
             ..Default::default()
         }
-        .into()
     }
+}
 
-    pub fn new_with_children(children: Vec<Handle>, data: NodeData) -> Handle {
-        let node = Self::new(data);
+/// The public-facing part of the node containing a reference-counter pointer
+/// to the inner node, allowing it to be copied cheaply and shared.
+#[derive(Default, Debug, Clone)]
+pub struct Node {
+    handle: Rc<RefCell<InnerNode>>,
+}
 
-        // Set parent on children
-        for child in &children {
-            child.borrow_mut().parent = Some(Rc::downgrade(&node));
-        }
-
-        node.borrow_mut().children = children;
-        node
-    }
-
-    pub fn from_rcdom(value: markup5ever_rcdom::Handle) -> Handle {
+/// Convert a parsed RcDom tree into our own tree representation
+impl From<markup5ever_rcdom::Handle> for Node {
+    fn from(value: markup5ever_rcdom::Handle) -> Self {
         let node_data = match &value.data {
             RcDomNodeData::Document => NodeData::Document,
             RcDomNodeData::Doctype {
@@ -96,13 +88,45 @@ impl Node {
             }
         };
 
-        let mut children: Vec<Handle> = Vec::new();
+        let mut children: Vec<Node> = Vec::new();
 
         for child in value.children.borrow().iter() {
-            let converted_child = Node::from_rcdom(child.clone());
+            let converted_child: Node = child.clone().into();
             children.push(converted_child.into());
         }
 
-        Node::new_with_children(children, node_data)
+        let mut node = Node::new(node_data);
+        node.set_children(children);
+
+        node
+    }
+}
+
+impl Node {
+    pub fn new(data: NodeData) -> Self {
+        Self {
+            handle: Rc::new(RefCell::new(InnerNode::new(data))),
+        }
+    }
+
+    pub fn set_children(&mut self, children: Vec<Node>) {
+        for child in children {
+            child.handle.borrow_mut().parent = Some(Rc::downgrade(&self.handle));
+            self.handle.borrow_mut().children.push(child);
+        }
+    }
+
+    pub fn get_node_data(&self) -> Rc<NodeData> {
+        self.handle.borrow().data.clone()
+    }
+
+    /// Get a reference to child by its index
+    pub fn get_child(&self, idx: usize) -> Node {
+        self.handle.borrow().children[idx].clone()
+    }
+
+    /// Clone the list of references to node children
+    pub fn get_children(&self) -> Vec<Node> {
+        self.handle.borrow().children.clone()
     }
 }

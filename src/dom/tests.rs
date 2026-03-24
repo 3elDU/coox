@@ -1,7 +1,7 @@
 use html5ever::{parse_document, tendril::TendrilSink};
 use markup5ever_rcdom::RcDom;
 
-use crate::dom::node::{Handle, Node, NodeData};
+use crate::dom::node::{Node, NodeData};
 
 static TEST_DOCUMENT: &'static str = "<!doctype html>
 <html>
@@ -16,25 +16,24 @@ static TEST_DOCUMENT: &'static str = "<!doctype html>
 </body>
 </html>";
 
-fn parse_tree() -> Handle {
-    Node::from_rcdom(
-        parse_document(RcDom::default(), Default::default())
-            .from_utf8()
-            .read_from(&mut TEST_DOCUMENT.as_bytes())
-            .unwrap()
-            .document,
-    )
+fn parse_tree() -> Node {
+    parse_document(RcDom::default(), Default::default())
+        .from_utf8()
+        .read_from(&mut TEST_DOCUMENT.as_bytes())
+        .unwrap()
+        .document
+        .into()
 }
 
-fn assert_element_name(node: Handle, expected_name: &str) {
-    match &node.borrow().data {
+fn assert_element_name(node: Node, expected_name: &str) {
+    match node.get_node_data().as_ref() {
         NodeData::Element { name, .. } => assert_eq!(name, expected_name),
         data @ _ => panic!("expected an element, got {:?}", data),
     }
 }
 
-fn assert_text_contents(node: Handle, expected_text: &str) {
-    match &node.borrow().data {
+fn assert_text_contents(node: Node, expected_text: &str) {
+    match node.get_node_data().as_ref() {
         NodeData::Text(contents) => assert_eq!(contents, expected_text),
         data @ _ => panic!("expected a text node, got {:?}", data),
     }
@@ -46,45 +45,42 @@ fn test_conversion() {
     dbg!(&tree);
 
     assert!(
-        matches!(tree.borrow().data, NodeData::Document),
+        matches!(tree.get_node_data().as_ref(), NodeData::Document),
         "Top-level node should be a document node"
     );
 
-    let doctype = tree.borrow().children[0].clone();
+    let doctype = tree.get_child(0);
     assert!(
-        matches!(doctype.borrow().data, NodeData::Doctype { .. }),
+        matches!(doctype.get_node_data().as_ref(), NodeData::Doctype { .. }),
         "First child of the document should be a doctype node"
     );
 
-    let html = tree.borrow().children[1].clone();
+    let html = tree.get_child(1);
     assert_element_name(html.clone(), "html");
 
-    let head = html.borrow().children[0].clone();
+    let head = html.get_child(0);
     assert_element_name(head.clone(), "head");
 
-    let title = head.borrow().children[1].clone();
+    let title = head.get_child(1);
     assert_element_name(title.clone(), "title");
-    assert_text_contents(title.borrow().children[0].clone(), "Test Document");
+    assert_text_contents(title.get_child(0), "Test Document");
 
-    let style = head.borrow().children[3].clone();
+    let style = head.get_child(3);
     assert_element_name(style.clone(), "style");
-    assert_text_contents(style.borrow().children[0].clone(), "* {padding: 0}");
+    assert_text_contents(style.get_child(0), "* {padding: 0}");
 
-    let script = head.borrow().children[5].clone();
+    let script = head.get_child(5);
     assert_element_name(script.clone(), "script");
-    assert_text_contents(
-        script.borrow().children[0].clone(),
-        "console.log('Hello, world')",
-    );
+    assert_text_contents(script.get_child(0), "console.log('Hello, world')");
 
-    let body = html.borrow().children[2].clone();
+    let body = html.get_child(2);
     assert_element_name(body.clone(), "body");
 
-    let h1 = body.borrow().children[1].clone();
+    let h1 = body.get_child(1);
     assert_element_name(h1.clone(), "h1");
-    assert_text_contents(h1.borrow().children[0].clone(), "Test Heading");
+    assert_text_contents(h1.get_child(0), "Test Heading");
 
-    let p = body.borrow().children[3].clone();
+    let p = body.get_child(3);
     assert_element_name(p.clone(), "p");
-    assert_text_contents(p.borrow().children[0].clone(), "Test Paragraph");
+    assert_text_contents(p.get_child(0), "Test Paragraph");
 }

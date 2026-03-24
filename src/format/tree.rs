@@ -1,4 +1,4 @@
-use crate::dom::node::{Handle, NodeData};
+use crate::dom::node::{Node, NodeData};
 
 /// A [`Node`] converted for use in printing out the html tree
 pub struct FormattedNode {
@@ -7,12 +7,12 @@ pub struct FormattedNode {
     pub closing_string: Option<String>,
 }
 
-impl TryFrom<Handle> for FormattedNode {
+impl TryFrom<Node> for FormattedNode {
     // The error here is symbolic, doesn't actually represent a malfunction
     type Error = ();
 
-    fn try_from(node: Handle) -> Result<Self, Self::Error> {
-        let (opening, text, closing) = match &node.borrow().data {
+    fn try_from(node: Node) -> Result<Self, Self::Error> {
+        let (opening, text, closing) = match node.get_node_data().as_ref() {
             NodeData::Document => (Some("<!doctype html>".to_owned()), None, None),
             NodeData::Comment(contents) => (
                 Some("<!--".to_owned()),
