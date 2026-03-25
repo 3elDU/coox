@@ -7,12 +7,12 @@ pub struct FormattedNode {
     pub closing_string: Option<String>,
 }
 
-impl TryFrom<Node> for FormattedNode {
+impl TryFrom<&Node> for FormattedNode {
     // The error here is symbolic, doesn't actually represent a malfunction
     type Error = ();
 
-    fn try_from(node: Node) -> Result<Self, Self::Error> {
-        let (opening, text, closing) = match node.get_node_data().as_ref() {
+    fn try_from(node: &Node) -> Result<Self, Self::Error> {
+        let (opening, text, closing) = match &node.data {
             NodeData::Document => (Some("<!doctype html>".to_owned()), None, None),
             NodeData::Comment(contents) => (
                 Some("<!--".to_owned()),
