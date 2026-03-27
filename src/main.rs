@@ -1,8 +1,11 @@
 mod app;
+mod config;
 mod context;
 mod dom;
 mod format;
 mod tabs;
+/// Text measuring function
+mod text;
 mod widgets;
 
 use std::{env, path::Path};

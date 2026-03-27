@@ -3,8 +3,8 @@ use std::{cell::RefCell, rc::Rc, usize};
 use crossterm::event::Event;
 use ratatui::{
     buffer::Buffer,
-    layout::Rect,
-    widgets::{StatefulWidget, Widget},
+    layout::{Constraint, Layout, Rect},
+    widgets::{Block, Borders, Paragraph, StatefulWidget, Widget, Wrap},
 };
 
 use crate::{
@@ -24,12 +24,20 @@ pub struct TreeTab {
 
 impl Widget for &mut TreeTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
+        let [tree_pane, details_pane] =
+            Layout::horizontal([Constraint::Fill(1), Constraint::Length(24)]).areas(area);
+
         let mut lines = Vec::new();
 
         let tree = self.tree.borrow();
         self.build_list(&mut lines, tree.get_root_node(), &tree, 0);
 
-        Scrollable::new(lines).render(area, buf, &mut self.state);
+        Scrollable::new(lines).render(tree_pane, buf, &mut self.state);
+
+        Paragraph::new("Node details / layout should be here")
+            .wrap(Wrap { trim: false })
+            .block(Block::new().borders(Borders::LEFT))
+            .render(details_pane, buf);
     }
 }
 

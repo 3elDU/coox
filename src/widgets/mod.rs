@@ -51,4 +51,8 @@ impl ScrollableState {
             _ => {}
         }
     }
+
+    pub fn get_scroll_offset(&self) -> usize {
+        return self.list_state.offset();
+    }
 }

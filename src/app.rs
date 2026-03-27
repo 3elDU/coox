@@ -16,7 +16,7 @@ use crate::{
 
 pub struct App {
     #[allow(dead_code)]
-    context: BrowserContext,
+    pub context: BrowserContext,
     exit: bool,
 
     active_tab: ActiveTab,

@@ -1,4 +1,5 @@
 use markup5ever_rcdom::NodeData as RcDomNodeData;
+use taffy::{AvailableSpace, Size, compute_root_layout, round_layout};
 
 use crate::dom::{
     attr::Attribute,
@@ -8,7 +9,7 @@ use crate::dom::{
 #[derive(Clone, Copy, Debug)]
 /// An index into the parent tree. This is to avoid confusion between
 /// node-local indices and global indices.
-pub(super) struct NodeId(usize);
+pub(super) struct NodeId(pub(super) usize);
 
 impl From<usize> for NodeId {
     fn from(value: usize) -> Self {
@@ -84,6 +85,16 @@ impl Tree {
     pub(super) fn append_child_id(&mut self, parent: NodeId, child: NodeId) {
         self.nodes[parent.0].children.push(child);
         self.nodes[child.0].parent = Some(parent);
+    }
+
+    pub fn layout(&mut self, available_space: Size<AvailableSpace>) {
+        compute_root_layout(
+            self,
+            self.get_root_node().id.unwrap().into(),
+            available_space,
+        );
+
+        round_layout(self, self.get_root_node().id.unwrap().into());
     }
 }
 

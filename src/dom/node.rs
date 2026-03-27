@@ -37,6 +37,10 @@ pub struct Node {
     pub(super) parent: Option<NodeId>,
 
     pub data: NodeData,
+    pub style: taffy::Style,
+    pub unrounded_layout: taffy::Layout,
+    pub final_layout: taffy::Layout,
+
     pub(super) children: Vec<NodeId>,
 }
 

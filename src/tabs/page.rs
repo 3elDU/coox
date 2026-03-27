@@ -3,65 +3,75 @@ use std::{cell::RefCell, rc::Rc};
 use crossterm::event::Event;
 use ratatui::{
     buffer::Buffer,
-    layout::Rect,
+    layout::{Offset, Rect},
     widgets::{StatefulWidget, Widget},
 };
+use taffy::{AvailableSpace, Size};
 
 use crate::{
+    config::FONT_METRICS,
     dom::{
         node::{Node, NodeData},
         tree::Tree,
     },
-    widgets::{Scrollable, ScrollableState},
+    text::render::render_text,
 };
 
 pub struct PageTab {
     tree: Rc<RefCell<Tree>>,
-    state: ScrollableState,
 }
 
 impl Widget for &mut PageTab {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let mut rendered_tree = Vec::new();
-        walk_tree(
-            &mut rendered_tree,
-            self.tree.borrow().get_root_node(),
-            &self.tree.borrow(),
-        );
+        self.tree.borrow_mut().layout(Size {
+            width: AvailableSpace::Definite(area.width as f32 * FONT_METRICS.width),
+            height: AvailableSpace::Definite(area.height as f32 * FONT_METRICS.height),
+        });
 
-        Scrollable::new(rendered_tree).render(area, buf, &mut self.state);
+        let tree = self.tree.borrow();
+        walk_tree(tree.get_root_node(), &tree, area, buf);
     }
 }
 
 impl PageTab {
     pub fn new(tree: Rc<RefCell<Tree>>) -> Self {
-        Self {
-            tree,
-            state: Default::default(),
-        }
+        Self { tree }
     }
 
-    pub fn handle_event(&mut self, event: Event) {
-        self.state.handle_event(event);
-    }
+    #[allow(unused)]
+    pub fn handle_event(&mut self, event: Event) {}
 }
 
-fn walk_tree(output: &mut Vec<String>, node: &Node, tree: &Tree) {
-    if let NodeData::Text(contents) = &node.data {
-        // Collapse whitespace: if the current line is empty, and the last line
-        // in the list is empty too, do not add the current line
-        if contents.trim().is_empty() {
-            match output.last() {
-                Some(line) if !line.trim().is_empty() => output.push(contents.trim().to_string()),
-                None => output.push(contents.trim().to_string()),
-                _ => {}
-            }
-        } else {
-            output.push(contents.trim().to_string());
-        }
+fn walk_tree(node: &Node, tree: &Tree, area: Rect, buf: &mut Buffer) {
+    if let NodeData::Element { name, .. } = &node.data
+        && matches!(
+            name.as_str(),
+            "area"
+                | "base"
+                | "basefont"
+                | "datalist"
+                | "head"
+                | "link"
+                | "meta"
+                | "noembed"
+                | "noframes"
+                | "param"
+                | "rp"
+                | "script"
+                | "style"
+                | "template"
+                | "title"
+        )
+    {
+        // Skip rendering hidden elements
+        return;
+    }
+
+    if let NodeData::Text(text) = &node.data {
+        render_text(text, node.final_layout, area, buf);
     }
 
     for child in node.get_children(tree) {
-        walk_tree(output, child, tree);
+        walk_tree(child, tree, area, buf);
     }
 }
